@@ -50,6 +50,32 @@ export const runHandshakeProtocol = async (
     logs.push({ step, actor, payload, timestamp: Date.now() });
   };
 
+  // --- STEP 0: REFLECTION CHECK (Internal Monologue) ---
+  // The Initiator consults the Mirror before reaching out.
+  const reflectionHistory = relationship.reflection_logs || [];
+  const latestReflection = reflectionHistory.length > 0 
+    ? reflectionHistory.sort((a, b) => b.date - a.date)[0] 
+    : null;
+
+  if (latestReflection) {
+     addLog('INTERNAL_CHECK', 'INITIATOR', {
+       source: 'REFLECTION_AGENT',
+       status: 'INSIGHT_FOUND',
+       insight: latestReflection.summary.insight,
+       vibe: latestReflection.summary.vibe
+     });
+     
+     // Simulate processing time for the check
+     await new Promise(r => setTimeout(r, 500));
+  } else {
+      addLog('INTERNAL_CHECK', 'INITIATOR', {
+       source: 'REFLECTION_AGENT',
+       status: 'NO_DATA',
+       message: 'No prior reflection logs found. Proceeding with standard protocol.'
+     });
+     await new Promise(r => setTimeout(r, 300));
+  }
+
   // --- STEP 1: THE SYN (Initiator) ---
   // Agent A creates the intent
   const intent = {

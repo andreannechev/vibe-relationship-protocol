@@ -165,6 +165,18 @@ export interface RelationshipAnnotations {
   };
 }
 
+// --- REFLECTION AGENT (THE MIRROR) TYPES ---
+export interface ReflectionLog {
+  id: string;
+  date: number;
+  summary: {
+    update: string[];
+    vibe: string;
+    insight: string;
+  };
+  raw_transcript: string;
+}
+
 export interface Relationship {
   user_a: string; // The logged-in user
   user_b: string; // The friend
@@ -178,6 +190,7 @@ export interface Relationship {
   preferred_route?: string; // e.g. "WhatsApp", "iMessage" for Shadow Nodes
   active_rhythms?: string[]; // e.g. ["weekdays_pm"] for Shadow Nodes
   annotations: RelationshipAnnotations; // Private User Data
+  reflection_logs: ReflectionLog[]; // History of "Mirror" sessions
 }
 
 // --- TREATY EXCHANGE TYPES ---
@@ -232,6 +245,11 @@ export interface ArtifactSuggestion {
   searchQuery: string;
 }
 
+export interface ReflectionSession {
+  probeQuestion: string;
+  transcript: string;
+}
+
 
 // Application State Helper
 export type DashboardMode = 'RADAR' | 'LIST' | 'GARDEN';
@@ -249,10 +267,11 @@ export type ViewState =
   | 'SHADOW_NODE_DETAIL'
   | 'SHADOW_NODE_EDIT'
   | 'INVITE_LANDING' 
-  | 'SIGNAL_DECK';
+  | 'SIGNAL_DECK'
+  | 'REFLECTION_MIRROR'; // New View
 
 export interface HandshakeLog {
-  step: 'SYN' | 'ACK' | 'PROPOSE' | 'COMMIT' | 'TERM';
+  step: 'INTERNAL_CHECK' | 'SYN' | 'ACK' | 'PROPOSE' | 'COMMIT' | 'TERM';
   actor: 'INITIATOR' | 'RECEIVER';
   payload: any;
   timestamp: number;

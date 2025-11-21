@@ -68,7 +68,7 @@ export const SignalDeck: React.FC<SignalDeckProps> = ({ self, friend, relationsh
   const [toneValue, setToneValue] = useState(50); // 0 - 100
   const [tunedTexts, setTunedTexts] = useState<{[key: number]: string}>({});
   const [isTuning, setIsTuning] = useState(false);
-  const tuningDebounceRef = useRef<NodeJS.Timeout | null>(null);
+  const tuningDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Custom Signal State
   const [showCustomInput, setShowCustomInput] = useState(false);

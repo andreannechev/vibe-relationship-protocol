@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { ViewState, User, Relationship, UserStatus, DashboardMode, Treaty, ConnectionTier, InteractionMode, RelationshipAnnotations } from './types';
+import { ViewState, User, Relationship, UserStatus, DashboardMode, Treaty, ConnectionTier, InteractionMode, RelationshipAnnotations, ReflectionLog } from './types';
 import { MOCK_SELF, MOCK_FRIENDS, MOCK_RELATIONSHIPS, DEFAULT_DIRECTIVES, DEFAULT_CALENDAR_CONFIG, DEFAULT_NEURAL_CONFIG } from './constants';
 import { RadarView } from './components/RadarView';
 import { FriendList } from './components/FriendList';
@@ -20,6 +20,7 @@ import { InviteLanding } from './components/InviteLanding';
 import { ShadowNodeForm } from './components/ShadowNodeForm';
 import { ShadowNodeDetail } from './components/ShadowNodeDetail';
 import { SignalDeck } from './components/SignalDeck';
+import { ReflectionMirror } from './components/ReflectionMirror';
 import { Terminal, Plus } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -68,6 +69,18 @@ const App: React.FC = () => {
   const handleUpdateAnnotations = (friendId: string, annotations: RelationshipAnnotations) => {
     setRelationships(prev => prev.map(r => 
       r.user_b === friendId ? { ...r, annotations } : r
+    ));
+  };
+  
+  const handleSaveReflectionLog = (friendId: string, log: ReflectionLog) => {
+    // When saving a reflection log, we also update the last_interaction timestamp
+    // because "Reflecting" typically happens after an interaction (Post-Game) or counts as a mental check-in.
+    setRelationships(prev => prev.map(r => 
+      r.user_b === friendId ? { 
+        ...r, 
+        last_interaction: Date.now(),
+        reflection_logs: [log, ...(r.reflection_logs || [])] 
+      } : r
     ));
   };
 
@@ -130,7 +143,8 @@ const App: React.FC = () => {
          tags: ["Shadow Node"],
          energy_requirement: "MEDIUM",
          notes: "",
-       }
+       },
+       reflection_logs: []
      };
      setRelationships([...relationships, newRel]);
      setView('DASHBOARD');
@@ -258,6 +272,7 @@ const App: React.FC = () => {
                   onClose={handleBackToDashboard}
                   onToggleHide={() => handleToggleHide(selectedFriendId)}
                   onRemove={() => handleRemoveFriend(selectedFriendId)}
+                  onReflect={() => setView('REFLECTION_MIRROR')}
                 />
               )}
 
@@ -280,7 +295,7 @@ const App: React.FC = () => {
                   relationship={relationships.find(r => r.user_b === selectedFriendId)!}
                   onEdit={() => setView('SHADOW_NODE_EDIT')}
                   onBack={handleBackToDashboard}
-                  onLogInteraction={() => handleLogInteraction(selectedFriendId)}
+                  onReflect={() => setView('REFLECTION_MIRROR')}
                   onOpenSignalDeck={() => setView('SIGNAL_DECK')}
                   onRemove={() => handleRemoveFriend(selectedFriendId)}
                   onToggleHide={() => handleToggleHide(selectedFriendId)}
@@ -311,6 +326,19 @@ const App: React.FC = () => {
                      if (friend?.is_shadow) setView('SHADOW_NODE_DETAIL');
                      else setView('FRIEND_DOSSIER');
                   }}
+                />
+              )}
+
+              {/* Reflection Agent (The Mirror) */}
+              {view === 'REFLECTION_MIRROR' && selectedFriendId && (
+                <ReflectionMirror 
+                  friend={friends.find(f => f.id === selectedFriendId)!}
+                  onClose={() => {
+                    const friend = friends.find(f => f.id === selectedFriendId);
+                    if (friend?.is_shadow) setView('SHADOW_NODE_DETAIL');
+                    else setView('FRIEND_DOSSIER');
+                  }}
+                  onSave={(log) => handleSaveReflectionLog(selectedFriendId, log)}
                 />
               )}
 

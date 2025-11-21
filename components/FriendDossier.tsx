@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { User, Relationship, RelationshipAnnotations, UserStatus, EnergyRequirement, ArtifactSuggestion } from '../types';
 import { generateArtifactSuggestion } from '../services/geminiService';
 import { ArtifactCard } from './ArtifactCard';
-import { X, Save, Tag, Battery, MessageSquare, Radar, Power, Zap, Activity, Settings, ArrowRight, Leaf, Eye, EyeOff, Trash2, MoreVertical, Gift, Loader2 } from 'lucide-react';
+import { X, Save, Tag, Battery, MessageSquare, Radar, Power, Zap, Activity, Settings, ArrowRight, Leaf, Eye, EyeOff, Trash2, MoreVertical, Gift, Loader2, BrainCircuit } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface FriendDossierProps {
@@ -15,6 +15,7 @@ interface FriendDossierProps {
   onToggleHide: () => void;
   onRemove: () => void;
   onClose: () => void;
+  onReflect: () => void;
 }
 
 export const FriendDossier: React.FC<FriendDossierProps> = ({ 
@@ -25,10 +26,10 @@ export const FriendDossier: React.FC<FriendDossierProps> = ({
   onSoftTouch, 
   onToggleHide,
   onRemove,
-  onClose 
+  onClose,
+  onReflect
 }) => {
   
-  // Local State for Annotations (Auto-save on blur/close logic handled by parent or explicit save)
   const [annotations, setAnnotations] = useState<RelationshipAnnotations>(relationship.annotations || {
     tags: [],
     energy_requirement: 'MEDIUM',
@@ -39,15 +40,10 @@ export const FriendDossier: React.FC<FriendDossierProps> = ({
   const [newTag, setNewTag] = useState('');
   const [showSettings, setShowSettings] = useState(false);
   const [confirmRemove, setConfirmRemove] = useState(false);
-
-  // Artifact Scout State
   const [isScoutingArtifact, setIsScoutingArtifact] = useState(false);
   const [artifact, setArtifact] = useState<ArtifactSuggestion | null>(null);
 
-  // Check if dirty for auto-save or UI feedback
   const isDirty = JSON.stringify(annotations) !== JSON.stringify(relationship.annotations);
-
-  // Telemetry Calculations
   const daysSinceLast = Math.floor((Date.now() - relationship.last_interaction) / (1000 * 60 * 60 * 24));
   
   const getStatusColor = (status: UserStatus) => {
@@ -72,7 +68,7 @@ export const FriendDossier: React.FC<FriendDossierProps> = ({
 
   const handleArtifactScout = async () => {
      if (artifact) {
-       setArtifact(null); // Toggle off if already showing
+       setArtifact(null); 
        return;
      }
      setIsScoutingArtifact(true);
@@ -85,7 +81,6 @@ export const FriendDossier: React.FC<FriendDossierProps> = ({
      setIsScoutingArtifact(false);
   };
 
-  // Autosave effect
   useEffect(() => {
     const timer = setTimeout(() => {
        if (isDirty) onUpdateAnnotations(annotations);
@@ -98,7 +93,6 @@ export const FriendDossier: React.FC<FriendDossierProps> = ({
       
       {/* ZONE A: LIVE HEADER */}
       <div className="p-6 pb-8 bg-zinc-900 border-b border-zinc-800 relative overflow-hidden">
-        {/* Background Gradient based on Status */}
         <div className={`absolute top-0 right-0 w-64 h-64 bg-gradient-to-br ${user.current_status === UserStatus.OPEN ? 'from-emerald-500/10' : 'from-rose-500/10'} to-transparent blur-3xl rounded-full -mr-20 -mt-20 pointer-events-none`} />
 
         <div className="flex justify-between items-start relative z-10">
@@ -135,9 +129,18 @@ export const FriendDossier: React.FC<FriendDossierProps> = ({
         
         {/* 1. Context Tags */}
         <section className="space-y-3">
-           <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest flex items-center">
-             <Tag size={12} className="mr-2" /> Context Tags
-           </label>
+           <div className="flex justify-between items-center">
+             <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest flex items-center">
+               <Tag size={12} className="mr-2" /> Context Tags
+             </label>
+             <button 
+               onClick={onReflect}
+               className="flex items-center space-x-1 text-[10px] font-bold uppercase text-indigo-400 hover:text-indigo-300 bg-indigo-500/10 px-2 py-1 rounded-full border border-indigo-500/20 transition-colors"
+             >
+               <BrainCircuit size={12} />
+               <span>Reflect</span>
+             </button>
+           </div>
            <div className="flex flex-wrap gap-2">
               {annotations.tags.map(tag => (
                 <span key={tag} className="px-3 py-1 bg-zinc-900 border border-zinc-700 rounded-full text-xs text-zinc-300 flex items-center group">
@@ -186,11 +189,6 @@ export const FriendDossier: React.FC<FriendDossierProps> = ({
                 }}
                 className="absolute inset-0 opacity-0 cursor-pointer"
               />
-              <div className="flex justify-between text-[8px] uppercase text-zinc-600 mt-3 font-bold tracking-wider">
-                 <span>Low (Text)</span>
-                 <span>Med (Coffee)</span>
-                 <span>High (Trip)</span>
-              </div>
            </div>
         </section>
 
@@ -202,15 +200,34 @@ export const FriendDossier: React.FC<FriendDossierProps> = ({
            <textarea 
              value={annotations.notes}
              onChange={(e) => setAnnotations({ ...annotations, notes: e.target.value })}
-             placeholder="What binds you together? (e.g., Shared love for 90s hip hop. Hates spicy food.)"
+             placeholder="What binds you together?..."
              className="w-full h-24 bg-zinc-900/50 border border-zinc-800 rounded-lg p-3 text-sm text-zinc-300 placeholder-zinc-600 focus:border-zinc-600 outline-none resize-none leading-relaxed"
            />
-           <p className="text-[10px] text-zinc-600 italic">
-             * The Agent reads this to generate personalized signals.
-           </p>
         </section>
+        
+        {/* 4. Reflection Logs (HISTORY) */}
+        {relationship.reflection_logs && relationship.reflection_logs.length > 0 && (
+          <section className="space-y-3 pt-4 border-t border-zinc-900">
+             <label className="text-[10px] font-bold text-indigo-400 uppercase tracking-widest flex items-center">
+                <BrainCircuit size={12} className="mr-2" /> Mirror Insights
+             </label>
+             <div className="space-y-3">
+                {relationship.reflection_logs.map((log) => (
+                   <div key={log.id} className="bg-zinc-900/50 border border-zinc-800 rounded-lg p-3">
+                      <div className="flex justify-between mb-2">
+                         <span className="text-[10px] text-zinc-500 font-mono">{new Date(log.date).toLocaleDateString()}</span>
+                         <span className="text-[10px] text-indigo-300 italic">"{log.summary.vibe}"</span>
+                      </div>
+                      <p className="text-xs text-zinc-300 leading-relaxed">
+                         {log.summary.insight}
+                      </p>
+                   </div>
+                ))}
+             </div>
+          </section>
+        )}
 
-        {/* 4. Manual Override */}
+        {/* 5. Manual Override */}
         <section className="border-t border-zinc-800 pt-6">
            <div className="flex items-center justify-between">
               <div>
@@ -230,34 +247,12 @@ export const FriendDossier: React.FC<FriendDossierProps> = ({
                  <div className={`w-4 h-4 bg-white rounded-full transition-transform ${annotations.manual_override?.active ? 'translate-x-6' : ''}`} />
               </button>
            </div>
-           
-           {annotations.manual_override?.active && (
-              <div className="mt-4 flex gap-2">
-                 {[UserStatus.OPEN, UserStatus.RECHARGE].map(status => (
-                    <button 
-                      key={status}
-                      onClick={() => setAnnotations({ 
-                         ...annotations, 
-                         manual_override: { active: true, forced_status: status } 
-                      })}
-                      className={`flex-1 py-2 text-xs font-bold uppercase rounded border ${
-                         annotations.manual_override?.forced_status === status 
-                         ? 'bg-zinc-800 border-zinc-600 text-white' 
-                         : 'bg-transparent border-zinc-800 text-zinc-600'
-                      }`}
-                    >
-                       {status}
-                    </button>
-                 ))}
-              </div>
-           )}
         </section>
         
-        {/* Spacer for Footer */}
         <div className="h-20" />
       </div>
 
-      {/* ZONE C: ACTION DECK (Footer) */}
+      {/* ZONE C: ACTION DECK */}
       <div className="p-6 bg-zinc-900/90 backdrop-blur-md border-t border-zinc-800">
          <div className="grid grid-cols-6 gap-3 relative">
             
@@ -293,7 +288,7 @@ export const FriendDossier: React.FC<FriendDossierProps> = ({
                {isScoutingArtifact ? <Loader2 size={18} className="animate-spin" /> : <Gift size={18} />}
             </button>
 
-            {/* Settings (Gear Icon) */}
+            {/* Settings */}
             <div className="col-span-1 relative">
               <button 
                 onClick={() => setShowSettings(!showSettings)}

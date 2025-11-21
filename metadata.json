@@ -1,5 +1,7 @@
 {
   "name": "COMPACT // The Social Protocol",
   "description": "A high-signal, headless social network that manages your social availability boundaries and facilitates real-world connection logistics.",
-  "requestFramePermissions": []
+  "requestFramePermissions": [
+    "microphone"
+  ]
 }

@@ -41,6 +41,16 @@ export const generateSignalDeck = async (
 
   const lastContactDays = Math.floor((Date.now() - relationship.last_interaction) / (1000 * 60 * 60 * 24));
   
+  // EXTRACT REFLECTION CONTEXT
+  const reflectionHistory = relationship.reflection_logs || [];
+  const latestReflection = reflectionHistory.length > 0 
+    ? reflectionHistory.sort((a, b) => b.date - a.date)[0] 
+    : null;
+
+  const reflectionContext = latestReflection 
+    ? `- Recent Reflection Insight: "${latestReflection.summary.insight}"\n- Recent Vibe: "${latestReflection.summary.vibe}"`
+    : "- No recent reflections.";
+
   const prompt = `
     You are the "Lagom Connection Engine." Your goal is to generate low-effort, high-warmth connection ideas for a drifted friend.
 
@@ -49,6 +59,7 @@ export const generateSignalDeck = async (
     - Friend: ${friend.name}
     - Shared Interests: ${relationship.shared_interests.join(", ")}
     - Time since last contact: ${lastContactDays} days
+    ${reflectionContext}
 
     CORE PHILOSOPHY (STRICT ADHERENCE REQUIRED):
     1. NO QUESTIONS. Never ask "How are you?" or "What's new?".
@@ -56,12 +67,13 @@ export const generateSignalDeck = async (
     3. LOW COGNITIVE LOAD. No scheduling, no decisions.
     4. ASYNCHRONOUS. Assume they might reply in 3 weeks or never.
     5. GENEROSITY. The message is a gift, not a bid for attention.
+    6. REFLECTION AWARENESS. If the Recent Reflection Insight suggests tension or a specific vibe, tailor the signals to address it subtly (e.g. if stressed, send calm vibes; if distant, send nostalgia).
 
     TASK:
     Generate a JSON object with 4 sections based on the categories below.
 
     SECTION 1: THE SIGNALS (3 Drafts)
-    Create 3 unique messages based on the "Shared Interests".
+    Create 3 unique messages based on the "Shared Interests" AND the "Reflection Context".
     - Option A: Nostalgic ("Remember that time...")
     - Option B: Vibe/Atmosphere ("This made me think of you...")
     - Option C: Random/Playful ("Ninja ping...")

@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { User, Relationship, InteractionMode } from '../types';
-import { ArrowLeft, Ghost, MessageSquare, Clock, MoreVertical, Edit3, Trash2, RotateCcw, Sparkles, Eye, EyeOff, Activity } from 'lucide-react';
+import { ArrowLeft, Ghost, MessageSquare, Clock, MoreVertical, Edit3, Trash2, BrainCircuit, Sparkles, Eye, EyeOff, Activity } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface ShadowNodeDetailProps {
@@ -9,7 +9,7 @@ interface ShadowNodeDetailProps {
   relationship: Relationship;
   onEdit: () => void;
   onBack: () => void;
-  onLogInteraction: () => void;
+  onReflect: () => void;
   onOpenSignalDeck: () => void;
   onRemove: () => void;
   onToggleHide: () => void;
@@ -20,7 +20,7 @@ export const ShadowNodeDetail: React.FC<ShadowNodeDetailProps> = ({
   relationship, 
   onEdit, 
   onBack, 
-  onLogInteraction, 
+  onReflect, 
   onOpenSignalDeck,
   onRemove,
   onToggleHide
@@ -146,11 +146,11 @@ export const ShadowNodeDetail: React.FC<ShadowNodeDetailProps> = ({
 
            {/* Manual Logging Action */}
            <button 
-             onClick={onLogInteraction}
-             className="w-full py-3 border border-zinc-700 hover:bg-zinc-800 rounded-lg text-xs font-bold uppercase tracking-widest flex items-center justify-center transition-all text-zinc-300 hover:text-white"
+             onClick={onReflect}
+             className="w-full py-3 border border-indigo-500/30 bg-indigo-500/5 hover:bg-indigo-500/10 rounded-lg text-xs font-bold uppercase tracking-widest flex items-center justify-center transition-all text-indigo-300 hover:text-white"
            >
-              <RotateCcw size={14} className="mr-2" />
-              Log Manual Interaction
+              <BrainCircuit size={14} className="mr-2" />
+              Reflect & Log Interaction
            </button>
         </section>
 
@@ -199,6 +199,38 @@ export const ShadowNodeDetail: React.FC<ShadowNodeDetailProps> = ({
               </div>
            </div>
         </section>
+
+        {/* REFLECTION HISTORY - NEW SECTION */}
+        {relationship.reflection_logs && relationship.reflection_logs.length > 0 && (
+          <section className="space-y-3 pt-4 border-t border-zinc-900">
+             <label className="text-[10px] font-bold text-indigo-400 uppercase tracking-widest flex items-center">
+                <BrainCircuit size={12} className="mr-2" /> Mirror Insights
+             </label>
+             <div className="space-y-3">
+                {relationship.reflection_logs.slice().sort((a, b) => b.date - a.date).map((log) => (
+                   <div key={log.id} className="bg-zinc-900/50 border border-zinc-800 rounded-lg p-4">
+                      <div className="flex justify-between mb-2">
+                         <span className="text-[10px] text-zinc-500 font-mono">{new Date(log.date).toLocaleDateString()}</span>
+                         <span className="text-[10px] text-indigo-300 italic">"{log.summary.vibe}"</span>
+                      </div>
+                      <p className="text-xs text-zinc-300 leading-relaxed">
+                         {log.summary.insight}
+                      </p>
+                      {/* Updates if available */}
+                      {log.summary.update && log.summary.update.length > 0 && (
+                         <div className="mt-3 pt-3 border-t border-zinc-800/50">
+                             {log.summary.update.map((u, i) => (
+                               <div key={i} className="text-[10px] text-zinc-500 flex items-start mb-1 last:mb-0">
+                                 <span className="text-emerald-500/50 mr-2">•</span> {u}
+                               </div>
+                             ))}
+                         </div>
+                      )}
+                   </div>
+                ))}
+             </div>
+          </section>
+        )}
 
       </div>
 

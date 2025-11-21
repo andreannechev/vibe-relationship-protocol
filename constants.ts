@@ -1,4 +1,5 @@
 
+
 import { User, UserStatus, BioRhythm, CommunicationPolicy, Relationship, ConnectionTier, InteractionMode, CommPolicyLevel, Directives, CalendarConfig, NeuralBridgeConfig, SignalTemplate } from './types';
 
 export const APP_COLORS = {
@@ -168,7 +169,8 @@ export const MOCK_RELATIONSHIPS: Relationship[] = [
       energy_requirement: "MEDIUM",
       notes: "Sarah hates early morning texts. Love her dog, Rover.",
       manual_override: { active: false, forced_status: UserStatus.OPEN }
-    }
+    },
+    reflection_logs: []
   },
   {
     user_a: CURRENT_USER_ID,
@@ -183,7 +185,8 @@ export const MOCK_RELATIONSHIPS: Relationship[] = [
       energy_requirement: "HIGH",
       notes: "Marcus is always down for a spontaneous hang.",
       manual_override: { active: false, forced_status: UserStatus.OPEN }
-    }
+    },
+    reflection_logs: []
   },
   {
     user_a: CURRENT_USER_ID,
@@ -198,7 +201,8 @@ export const MOCK_RELATIONSHIPS: Relationship[] = [
       energy_requirement: "LOW",
       notes: "Elena needs space. Don't double text.",
       manual_override: { active: false, forced_status: UserStatus.OPEN }
-    }
+    },
+    reflection_logs: []
   },
   {
     user_a: CURRENT_USER_ID,
@@ -213,6 +217,7 @@ export const MOCK_RELATIONSHIPS: Relationship[] = [
       energy_requirement: "MEDIUM",
       notes: "",
       manual_override: { active: false, forced_status: UserStatus.OPEN }
-    }
+    },
+    reflection_logs: []
   }
 ];

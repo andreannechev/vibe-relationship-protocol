@@ -18,6 +18,10 @@ interface NegotiationCardProps {
 }
 
 const formatPayload = (step: string, payload: any): string => {
+  if (step === 'INTERNAL_CHECK') {
+    if (payload.status === 'NO_DATA') return `Memory Empty: ${payload.message}`;
+    return `Mirror Insight: "${payload.insight}" (Vibe: ${payload.vibe})`;
+  }
   if (step === 'SYN') return `Intent: ${payload.intent?.category} (${payload.intent?.energy_cost})`;
   if (step === 'ACK') return `Blind Slots: ${payload.blind_slots_count} found. State: ${payload.receiver_state?.vibe}`;
   if (step === 'PROPOSE') return `Suggested Slot: ${new Date(payload.selected_slot).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}`;
@@ -48,7 +52,11 @@ const ReasoningTrace: React.FC<{ logs: HandshakeLog[] }> = ({ logs }) => {
             
             <div className="flex-1 pt-1">
                <div className="flex items-center justify-between">
-                 <span className={`text-xs font-bold ${log.step === 'TERM' ? 'text-rose-400' : 'text-zinc-300'}`}>
+                 <span className={`text-xs font-bold ${
+                    log.step === 'TERM' ? 'text-rose-400' : 
+                    log.step === 'INTERNAL_CHECK' ? 'text-fuchsia-400' : 
+                    'text-zinc-300'
+                 }`}>
                    {log.step}
                  </span>
                  <span className="text-[10px] text-zinc-600 font-mono">

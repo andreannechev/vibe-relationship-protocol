@@ -1,6 +1,5 @@
-
 import { GoogleGenAI, Type } from "@google/genai";
-import { User, Relationship, Directives, ArtifactSuggestion } from "../types";
+import { User, Relationship, Directives, ArtifactSuggestion, ReflectionLog } from "../types";
 
 // Initialize the API client
 // NOTE TO USER: Add your API Key here or in your environment variables
@@ -241,3 +240,143 @@ export const generateArtifactSuggestion = async (
      return null;
    }
 }
+
+export interface ReflectionIntakeAnalysis {
+  context_summary: string;
+  questions: string[];
+}
+
+/**
+ * THE MIRROR (REFLECTION AGENT) - PHASE 1: THE PROBE
+ * Analyzes initial brain dump, summarizes it, and generates 3 distinct follow-up questions.
+ */
+export const analyzeReflectionIntake = async (
+  transcript: string,
+  friendName: string
+): Promise<ReflectionIntakeAnalysis> => {
+  const fallback = {
+    context_summary: "I hear you. It sounds like there's a lot on your mind regarding this connection.",
+    questions: [
+      "How did that interaction make you feel specifically?",
+      "What is one thing you wish you had said?",
+      "Do you feel energized or drained when thinking about this?"
+    ]
+  };
+
+  if (!ai) return fallback;
+
+  const prompt = `
+    You are "The Mirror". A Socratic reflection agent.
+    
+    Context: The user is talking about their friend, ${friendName}.
+    User Transcript: "${transcript}"
+    
+    Task: 
+    1. Summarize the user's input in one empathetic sentence starting with "I hear that..." or "It seems like...".
+    2. Generate 3 distinct, short follow-up questions to help the user dig deeper.
+    
+    Output JSON Schema:
+    {
+      "context_summary": "string",
+      "questions": ["string", "string", "string"]
+    }
+  `;
+
+  try {
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: prompt,
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            context_summary: { type: Type.STRING },
+            questions: { type: Type.ARRAY, items: { type: Type.STRING } }
+          },
+          required: ["context_summary", "questions"]
+        }
+      }
+    });
+    const json = JSON.parse(response.text || "{}");
+    return {
+      context_summary: json.context_summary || fallback.context_summary,
+      questions: json.questions || fallback.questions
+    };
+  } catch (error) {
+    console.error("Reflection Probe Error:", error);
+    return fallback;
+  }
+};
+
+/**
+ * THE MIRROR (REFLECTION AGENT) - PHASE 2: THE SYNTHESIS
+ * Summarizes the session into structured insights.
+ */
+export const generateReflectionSummary = async (
+  intakeTranscript: string,
+  qaPairs: { question: string, answer: string }[],
+  friendName: string
+): Promise<ReflectionLog['summary']> => {
+  if (!ai) {
+    return {
+      update: ["Interaction logged manually."],
+      vibe: "Neutral / Unprocessed.",
+      insight: "Keep monitoring this connection."
+    };
+  }
+
+  const conversationStr = `
+    Initial Thoughts: ${intakeTranscript}
+    Follow Up Questions & Answers:
+    ${qaPairs.map(qa => `Q: ${qa.question}\nA: ${qa.answer}`).join('\n')}
+  `;
+
+  const prompt = `
+    You are "The Mirror".
+    Task: Synthesize this reflection session about ${friendName} into a strategic summary.
+    
+    Full Transcript: 
+    "${conversationStr}"
+    
+    Output JSON Schema:
+    {
+      "update": ["List of 1-3 hard facts/life updates mentioned"],
+      "vibe": "One sentence summarizing the emotional context (e.g. 'High energy but stressed')",
+      "insight": "One strategic observation for the user (e.g. 'You seem to be doing all the planning.')"
+    }
+  `;
+
+  try {
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: prompt,
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            update: { type: Type.ARRAY, items: { type: Type.STRING } },
+            vibe: { type: Type.STRING },
+            insight: { type: Type.STRING }
+          },
+          required: ["update", "vibe", "insight"]
+        }
+      }
+    });
+
+    const json = JSON.parse(response.text || "{}");
+    return {
+      update: json.update || [],
+      vibe: json.vibe || "No clear vibe detected.",
+      insight: json.insight || "No specific insight generated."
+    };
+  } catch (error) {
+    console.error("Reflection Summary Error:", error);
+    return {
+      update: ["Error processing reflection."],
+      vibe: "Unknown",
+      insight: "System could not synthesize."
+    };
+  }
+};
